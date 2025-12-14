@@ -1,8 +1,9 @@
-import { Clock, Gavel, Trophy, TrendingUp } from "lucide-react";
+import { Clock, Gavel, Trophy, TrendingUp, History } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { GameCard } from "@/components/cards/GameCard";
+import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listings } from "@/data/mockData";
 
 const auctionListings = listings.filter((l) => l.isAuction);
@@ -19,8 +20,8 @@ export default function Auctions() {
               <div className="p-3 rounded-lg bg-primary">
                 <Gavel className="h-6 w-6 text-primary-foreground" />
               </div>
-              <Badge variant="secondary" className="text-sm">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="text-sm animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-destructive mr-1.5 inline-block" />
                 Live Now
               </Badge>
             </div>
@@ -28,12 +29,12 @@ export default function Auctions() {
               Live Auctions
             </h1>
             <p className="text-muted-foreground max-w-xl">
-              Bid on rare and premium game accounts. Don't miss out on 
-              exclusive deals - auctions end soon!
+              Bid on rare and premium game accounts in real-time. Watch prices update live
+              and compete with other bidders for exclusive gaming assets!
             </p>
 
             {/* Stats */}
-            <div className="flex gap-8 mt-8">
+            <div className="flex flex-wrap gap-6 md:gap-8 mt-8">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-primary" />
                 <span className="text-sm">
@@ -46,37 +47,74 @@ export default function Auctions() {
                   <strong>₹2.5L+</strong> Total Bids Today
                 </span>
               </div>
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                <span className="text-sm">
+                  <strong>Real-time</strong> Updates
+                </span>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Auctions Grid */}
         <section className="container py-12">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-semibold">
-              Ending Soon
-            </h2>
-            <Badge variant="outline" className="text-destructive border-destructive">
-              <Clock className="h-3 w-3 mr-1" />
-              Limited Time
-            </Badge>
-          </div>
+          <Tabs defaultValue="live" className="w-full">
+            <div className="flex items-center justify-between mb-8">
+              <TabsList>
+                <TabsTrigger value="live" className="gap-2">
+                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                  Live Auctions
+                </TabsTrigger>
+                <TabsTrigger value="ending" className="gap-2">
+                  <Clock className="h-3 w-3" />
+                  Ending Soon
+                </TabsTrigger>
+              </TabsList>
+              <Badge variant="outline" className="text-destructive border-destructive hidden sm:flex">
+                <Clock className="h-3 w-3 mr-1" />
+                Limited Time
+              </Badge>
+            </div>
 
-          {auctionListings.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {auctionListings.map((listing) => (
-                <GameCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <Gavel className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No active auctions</h2>
-              <p className="text-muted-foreground">
-                Check back later for new auction listings
-              </p>
-            </div>
-          )}
+            <TabsContent value="live">
+              {auctionListings.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {auctionListings.map((listing) => (
+                    <AuctionCard key={listing.id} listing={listing} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <Gavel className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">No active auctions</h2>
+                  <p className="text-muted-foreground">
+                    Check back later for new auction listings
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="ending">
+              {auctionListings.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...auctionListings]
+                    .sort((a, b) => (a.endsAt?.getTime() || 0) - (b.endsAt?.getTime() || 0))
+                    .map((listing) => (
+                      <AuctionCard key={listing.id} listing={listing} />
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <Gavel className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">No auctions ending soon</h2>
+                  <p className="text-muted-foreground">
+                    Check back later for new auction listings
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </section>
 
         {/* How It Works */}
