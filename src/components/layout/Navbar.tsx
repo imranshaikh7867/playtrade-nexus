@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart, User, Gamepad2 } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, ShoppingCart, User, Gamepad2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -15,7 +24,14 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const cartCount = 2; // Mock cart count
+  const navigate = useNavigate();
+  const { user, signOut, loading } = useAuth();
+  const { totalItems } = useCart();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,19 +68,48 @@ export function Navbar() {
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
+              {totalItems > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {cartCount}
+                  {totalItems}
                 </Badge>
               )}
             </Button>
           </Link>
-          <Link to="/buyer-dashboard">
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Button>Sign In</Button>
+
+          {!loading && (
+            <>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/buyer-dashboard">My Orders</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/seller-dashboard">Seller Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/auth">
+                  <Button>Sign In</Button>
+                </Link>
+              )}
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -97,13 +142,22 @@ export function Navbar() {
               </Link>
             ))}
             <div className="flex gap-3 pt-4 border-t border-border">
-              <Link to="/cart" className="flex-1">
+              <Link to="/cart" className="flex-1" onClick={() => setIsOpen(false)}>
                 <Button variant="outline" className="w-full">
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  Cart ({cartCount})
+                  Cart ({totalItems})
                 </Button>
               </Link>
-              <Button className="flex-1">Sign In</Button>
+              {user ? (
+                <Button className="flex-1" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              ) : (
+                <Link to="/auth" className="flex-1" onClick={() => setIsOpen(false)}>
+                  <Button className="w-full">Sign In</Button>
+                </Link>
+              )}
             </div>
           </nav>
         </div>
