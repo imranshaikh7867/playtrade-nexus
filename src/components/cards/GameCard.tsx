@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
-import { Star, ShoppingCart, BadgeCheck, Clock, Gavel } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Star, ShoppingCart, BadgeCheck, Clock, Gavel, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 interface Listing {
   id: string;
@@ -39,6 +42,30 @@ function getTimeRemaining(endDate: Date) {
 }
 
 export function GameCard({ listing, className }: GameCardProps) {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    if (listing.isAuction) {
+      navigate(`/auctions`);
+      return;
+    }
+
+    setIsAdding(true);
+    await addToCart(listing.id);
+    setIsAdding(false);
+  };
+
   return (
     <Link to={`/listing/${listing.id}`}>
       <div
@@ -126,12 +153,12 @@ export function GameCard({ listing, className }: GameCardProps) {
               size="sm"
               variant={listing.isAuction ? "outline" : "default"}
               className="gap-1"
-              onClick={(e) => {
-                e.preventDefault();
-                // Mock add to cart
-              }}
+              onClick={handleAddToCart}
+              disabled={isAdding}
             >
-              {listing.isAuction ? (
+              {isAdding ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : listing.isAuction ? (
                 <>
                   <Gavel className="h-3.5 w-3.5" />
                   Bid

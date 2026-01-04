@@ -1,11 +1,15 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, BadgeCheck, Shield, Clock, ShoppingCart, Gavel, Heart, Share2, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Star, BadgeCheck, Shield, Clock, ShoppingCart, Gavel, Heart, Share2, MessageCircle, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { listings } from "@/data/mockData";
+import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 function getTimeRemaining(endDate: Date) {
   const total = endDate.getTime() - Date.now();
@@ -17,7 +21,34 @@ function getTimeRemaining(endDate: Date) {
 
 export default function ListingDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const listing = listings.find((l) => l.id === id) || listings[0];
+  const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setIsAdding(true);
+    await addToCart(listing.id);
+    setIsAdding(false);
+  };
+
+  const handleBuyNow = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setIsAdding(true);
+    await addToCart(listing.id);
+    setIsAdding(false);
+    navigate("/checkout");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -51,15 +82,18 @@ export default function ListingDetail() {
 
               {/* Action Buttons */}
               <div className="flex gap-3 mt-4">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.success("Saved to favorites!")}>
                   <Heart className="h-4 w-4 mr-2" />
                   Save
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success("Link copied!");
+                }}>
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.info("Contact feature coming soon!")}>
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Contact
                 </Button>
@@ -141,10 +175,12 @@ export default function ListingDetail() {
                       ₹{listing.currentBid?.toLocaleString()}
                     </p>
                   </div>
-                  <Button size="lg" className="w-full glow-primary-sm">
-                    <Gavel className="h-5 w-5 mr-2" />
-                    Place Bid
-                  </Button>
+                  <Link to="/auctions">
+                    <Button size="lg" className="w-full glow-primary-sm">
+                      <Gavel className="h-5 w-5 mr-2" />
+                      Place Bid
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -159,12 +195,33 @@ export default function ListingDetail() {
                     )}
                   </div>
                   <div className="flex gap-3">
-                    <Button size="lg" variant="outline" className="flex-1">
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      Add to Cart
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleAddToCart}
+                      disabled={isAdding}
+                    >
+                      {isAdding ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-5 w-5 mr-2" />
+                          Add to Cart
+                        </>
+                      )}
                     </Button>
-                    <Button size="lg" className="flex-1 glow-primary-sm">
-                      Buy Now
+                    <Button
+                      size="lg"
+                      className="flex-1 glow-primary-sm"
+                      onClick={handleBuyNow}
+                      disabled={isAdding}
+                    >
+                      {isAdding ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        "Buy Now"
+                      )}
                     </Button>
                   </div>
                 </div>
